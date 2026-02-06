@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1"
 base64 = "0.22"
+chrono = "0.4"
 clap = { version = "4", features = ["derive"] }
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "bmp"] }
 reqwest = { version = "0.12", features = ["json"] }

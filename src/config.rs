@@ -6,6 +6,8 @@ use std::path::PathBuf;
 #[derive(Debug, Deserialize)]
 pub struct Config {
     pub devices: HashMap<String, DeviceConfig>,
+    #[serde(default)]
+    pub schedule: Vec<ScheduleEntry>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -13,11 +15,21 @@ pub struct DeviceConfig {
     pub ip: String,
 }
 
-fn config_path() -> PathBuf {
-    dirs().join("config.toml")
+#[derive(Debug, Deserialize)]
+pub struct ScheduleEntry {
+    pub days: Vec<String>,
+    pub time: String,
+    #[serde(rename = "stage-left")]
+    pub stage_left: Option<String>,
+    #[serde(rename = "stage-right")]
+    pub stage_right: Option<String>,
 }
 
-fn dirs() -> PathBuf {
+fn config_path() -> PathBuf {
+    config_dir().join("config.toml")
+}
+
+pub fn config_dir() -> PathBuf {
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".into());
     PathBuf::from(home).join(".config").join("pixoo-ctl")
 }

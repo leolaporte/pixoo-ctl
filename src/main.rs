@@ -1,8 +1,9 @@
 mod config;
 mod device;
 mod image;
+mod schedule;
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
@@ -11,7 +12,7 @@ use std::path::PathBuf;
 struct Cli {
     /// Device name from config, or "all" for every device
     #[arg(short, long)]
-    device: String,
+    device: Option<String>,
 
     #[command(subcommand)]
     command: Command,
@@ -26,28 +27,42 @@ enum Command {
     },
     /// Show current device settings
     GetSettings,
+    /// Push images based on the current day/time schedule
+    UpdateSchedule,
+}
+
+fn require_device(device: &Option<String>, command: &str) -> Result<String> {
+    device
+        .clone()
+        .ok_or_else(|| anyhow!("--device is required for {}", command))
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
     let cfg = config::load()?;
-    let devices = config::resolve_devices(&cfg, &cli.device)?;
 
     match cli.command {
         Command::PushImage { path } => {
-            let pixmap = image::load_and_prepare(&path)?;
+            let device = require_device(&cli.device, "push-image")?;
+            let devices = config::resolve_devices(&cfg, &device)?;
+            let rgb_data = image::load_and_prepare(&path)?;
             for (name, ip) in &devices {
                 eprintln!("Pushing image to {} ({})", name, ip);
-                device::push_image(ip, &pixmap).await?;
+                device::push_image(ip, &rgb_data).await?;
                 eprintln!("Done: {}", name);
             }
         }
         Command::GetSettings => {
+            let device = require_device(&cli.device, "get-settings")?;
+            let devices = config::resolve_devices(&cfg, &device)?;
             for (name, ip) in &devices {
                 eprintln!("--- {} ({}) ---", name, ip);
                 device::get_settings(ip).await?;
             }
+        }
+        Command::UpdateSchedule => {
+            schedule::update(&cfg).await?;
         }
     }
 
