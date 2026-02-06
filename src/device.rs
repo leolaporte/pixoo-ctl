@@ -27,19 +27,15 @@ async fn post_command(ip: &str, payload: Value) -> Result<Value> {
 }
 
 pub async fn push_image(ip: &str, rgb_data: &[u8]) -> Result<()> {
-    let encoded = STANDARD.encode(rgb_data);
-    let pic_id = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
-        % 10000;
+    post_command(ip, json!({"Command": "Draw/ResetHttpGifId"})).await?;
 
+    let encoded = STANDARD.encode(rgb_data);
     let payload = json!({
         "Command": "Draw/SendHttpGif",
         "PicNum": 1,
         "PicWidth": CANVAS_SIZE,
         "PicOffset": 0,
-        "PicID": pic_id,
+        "PicID": 1,
         "PicSpeed": 1000,
         "PicData": encoded,
     });
