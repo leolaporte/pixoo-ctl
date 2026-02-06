@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use chrono::Timelike;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -14,6 +15,31 @@ struct State {
 
 fn state_path() -> PathBuf {
     config_dir().join("state.json")
+}
+
+fn hold_path() -> PathBuf {
+    config_dir().join("hold")
+}
+
+pub fn is_held() -> bool {
+    hold_path().exists()
+}
+
+pub fn set_hold() -> Result<()> {
+    std::fs::write(hold_path(), "").context("Failed to create hold file")?;
+    eprintln!("Schedule held. Run `pixoo-ctl resume` to re-enable.");
+    Ok(())
+}
+
+pub fn clear_hold() -> Result<()> {
+    let path = hold_path();
+    if path.exists() {
+        std::fs::remove_file(&path).context("Failed to remove hold file")?;
+        eprintln!("Schedule resumed.");
+    } else {
+        eprintln!("Schedule is not held.");
+    }
+    Ok(())
 }
 
 fn load_state() -> State {
@@ -79,6 +105,11 @@ fn find_active_entry<'a>(schedule: &'a [ScheduleEntry], day: &str, now_minutes: 
 }
 
 pub async fn update(config: &Config) -> Result<()> {
+    if is_held() {
+        eprintln!("Schedule is held. Run `pixoo-ctl resume` to re-enable.");
+        return Ok(());
+    }
+
     if config.schedule.is_empty() {
         eprintln!("No schedule entries in config");
         return Ok(());
@@ -130,5 +161,3 @@ pub async fn update(config: &Config) -> Result<()> {
 
     Ok(())
 }
-
-use chrono::Timelike;

@@ -24,11 +24,16 @@ enum Command {
     PushImage {
         /// Path to image file (PNG, JPEG, GIF, BMP)
         path: PathBuf,
+        /// Hold the schedule (prevent automatic updates until `resume`)
+        #[arg(long)]
+        hold: bool,
     },
     /// Show current device settings
     GetSettings,
     /// Push images based on the current day/time schedule
     UpdateSchedule,
+    /// Resume the schedule after a hold
+    Resume,
 }
 
 fn require_device(device: &Option<String>, command: &str) -> Result<String> {
@@ -43,7 +48,7 @@ async fn main() -> Result<()> {
     let cfg = config::load()?;
 
     match cli.command {
-        Command::PushImage { path } => {
+        Command::PushImage { path, hold } => {
             let device = require_device(&cli.device, "push-image")?;
             let devices = config::resolve_devices(&cfg, &device)?;
             let rgb_data = image::load_and_prepare(&path)?;
@@ -51,6 +56,9 @@ async fn main() -> Result<()> {
                 eprintln!("Pushing image to {} ({})", name, ip);
                 device::push_image(ip, &rgb_data).await?;
                 eprintln!("Done: {}", name);
+            }
+            if hold {
+                schedule::set_hold()?;
             }
         }
         Command::GetSettings => {
@@ -63,6 +71,9 @@ async fn main() -> Result<()> {
         }
         Command::UpdateSchedule => {
             schedule::update(&cfg).await?;
+        }
+        Command::Resume => {
+            schedule::clear_hold()?;
         }
     }
 
