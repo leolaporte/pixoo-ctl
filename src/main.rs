@@ -8,7 +8,7 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "pixoo-ctl", about = "Control Divoom Pixoo 64 devices")]
+#[command(name = ",pixoo-ctl", about = "Control Divoom Pixoo 64 devices")]
 struct Cli {
     /// Device name from config, or "all" for every device
     #[arg(short, long)]

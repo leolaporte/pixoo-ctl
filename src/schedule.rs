@@ -27,7 +27,7 @@ pub fn is_held() -> bool {
 
 pub fn set_hold() -> Result<()> {
     std::fs::write(hold_path(), "").context("Failed to create hold file")?;
-    eprintln!("Schedule held. Run `pixoo-ctl resume` to re-enable.");
+    eprintln!("Schedule held. Run `,pixoo-ctl resume` to re-enable.");
     Ok(())
 }
 
@@ -106,7 +106,7 @@ fn find_active_entry<'a>(schedule: &'a [ScheduleEntry], day: &str, now_minutes: 
 
 pub async fn update(config: &Config) -> Result<()> {
     if is_held() {
-        eprintln!("Schedule is held. Run `pixoo-ctl resume` to re-enable.");
+        eprintln!("Schedule is held. Run `,pixoo-ctl resume` to re-enable.");
         return Ok(());
     }
 

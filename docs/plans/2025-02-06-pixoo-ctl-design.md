@@ -12,9 +12,9 @@ A Rust CLI tool to push images to named Divoom Pixoo 64 devices, designed to be 
 ## CLI Commands
 
 ```
-pixoo-ctl push-image --device stage-left ./show-art.png
-pixoo-ctl push-image --device all ./on-air.png
-pixoo-ctl get-settings --device stage-left
+,pixoo-ctl push-image --device stage-left ./show-art.png
+,pixoo-ctl push-image --device all ./on-air.png
+,pixoo-ctl get-settings --device stage-left
 ```
 
 ### push-image

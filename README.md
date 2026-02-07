@@ -1,4 +1,4 @@
-# pixoo-ctl
+# ,pixoo-ctl
 
 A command-line tool to push images to [Divoom Pixoo 64](https://divoom.com/products/pixoo-64) LED displays. Supports multiple named devices, automatic scheduling by day and time, and manual overrides.
 
@@ -7,14 +7,8 @@ Built in Rust. Talks directly to the Pixoo local HTTP API — no cloud, no app, 
 ## Install
 
 ```bash
-cargo install --path .
-```
-
-Or build manually:
-
-```bash
 cargo build --release
-cp target/release/pixoo-ctl ~/.local/bin/
+cp target/release/pixoo-ctl ~/.local/bin/,pixoo-ctl
 ```
 
 ## Configuration
@@ -37,10 +31,10 @@ Add as many `[devices.<name>]` entries as you have Pixoo devices.
 
 ```bash
 # Push to one device
-pixoo-ctl -d stage-left push-image ./art.png
+,pixoo-ctl -d stage-left push-image ./art.png
 
 # Push to all devices
-pixoo-ctl -d all push-image ./on-air.png
+,pixoo-ctl -d all push-image ./on-air.png
 ```
 
 Images are automatically resized to 64x64 using Lanczos3 filtering. Supports PNG, JPEG, GIF, and BMP.
@@ -48,7 +42,7 @@ Images are automatically resized to 64x64 using Lanczos3 filtering. Supports PNG
 ### Query device settings
 
 ```bash
-pixoo-ctl -d stage-left get-settings
+,pixoo-ctl -d stage-left get-settings
 ```
 
 ### Scheduled updates
@@ -78,7 +72,7 @@ stage-right = "/path/to/logo.png"
 Run the scheduler:
 
 ```bash
-pixoo-ctl update-schedule
+,pixoo-ctl update-schedule
 ```
 
 It matches the current day and time, finds the most recent applicable entry, and pushes the images. It tracks what's already displayed and skips re-sending — safe to run frequently.
@@ -87,7 +81,7 @@ Day abbreviations: `Mon`, `Tue`, `Wed`, `Thu`, `Fri`, `Sat`, `Sun`.
 
 ### Automate with launchd (macOS)
 
-Create `~/Library/LaunchAgents/com.pixoo-ctl.schedule.plist`:
+Create `~/Library/LaunchAgents/com.pixoo-ctl.schedule.plist` (note: the launchd label doesn't need the comma):
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -99,7 +93,7 @@ Create `~/Library/LaunchAgents/com.pixoo-ctl.schedule.plist`:
     <string>com.pixoo-ctl.schedule</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/YOU/.local/bin/pixoo-ctl</string>
+        <string>/Users/YOU/.local/bin/,pixoo-ctl</string>
         <string>update-schedule</string>
     </array>
     <key>StartInterval</key>
@@ -127,13 +121,13 @@ For Linux, use a systemd timer or cron instead.
 Push a custom image and pause automatic updates:
 
 ```bash
-pixoo-ctl -d stage-left push-image ./special.png --hold
+,pixoo-ctl -d stage-left push-image ./special.png --hold
 ```
 
 The scheduler will skip updates while held. Resume when ready:
 
 ```bash
-pixoo-ctl resume
+,pixoo-ctl resume
 ```
 
 ## How it works
