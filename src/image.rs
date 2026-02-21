@@ -5,8 +5,8 @@ const CANVAS_SIZE: u32 = 64;
 
 /// Load an image file and return raw RGB bytes (64x64 = 12,288 bytes).
 pub fn load_and_prepare(path: &Path) -> Result<Vec<u8>> {
-    let img = image::open(path)
-        .with_context(|| format!("Failed to open image: {}", path.display()))?;
+    let img =
+        image::open(path).with_context(|| format!("Failed to open image: {}", path.display()))?;
 
     let img = if img.width() != CANVAS_SIZE || img.height() != CANVAS_SIZE {
         eprintln!(

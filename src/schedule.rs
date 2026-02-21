@@ -26,8 +26,9 @@ pub fn is_held() -> bool {
 }
 
 pub fn set_hold() -> Result<()> {
+    std::fs::create_dir_all(config_dir()).context("Failed to create config directory")?;
     std::fs::write(hold_path(), "").context("Failed to create hold file")?;
-    eprintln!("Schedule held. Run `,pixoo-ctl resume` to re-enable.");
+    eprintln!("Schedule held. Run `pixoo-ctl resume` to re-enable.");
     Ok(())
 }
 
@@ -50,6 +51,7 @@ fn load_state() -> State {
 }
 
 fn save_state(state: &State) -> Result<()> {
+    std::fs::create_dir_all(config_dir()).context("Failed to create config directory")?;
     let json = serde_json::to_string_pretty(state)?;
     std::fs::write(state_path(), json).context("Failed to write state file")?;
     Ok(())
@@ -72,10 +74,17 @@ fn parse_time(s: &str) -> Option<u32> {
     }
     let h: u32 = parts[0].parse().ok()?;
     let m: u32 = parts[1].parse().ok()?;
+    if h > 23 || m > 59 {
+        return None;
+    }
     Some(h * 60 + m)
 }
 
-fn find_active_entry<'a>(schedule: &'a [ScheduleEntry], day: &str, now_minutes: u32) -> Option<&'a ScheduleEntry> {
+fn find_active_entry<'a>(
+    schedule: &'a [ScheduleEntry],
+    day: &str,
+    now_minutes: u32,
+) -> Option<&'a ScheduleEntry> {
     let mut best: Option<(&ScheduleEntry, u32)> = None;
 
     for entry in schedule {
@@ -119,11 +128,20 @@ pub async fn update(config: &Config) -> Result<()> {
     let now = current_time_minutes();
 
     let Some(entry) = find_active_entry(&config.schedule, &day, now) else {
-        eprintln!("No matching schedule entry for {} at {:02}:{:02}", day, now / 60, now % 60);
+        eprintln!(
+            "No matching schedule entry for {} at {:02}:{:02}",
+            day,
+            now / 60,
+            now % 60
+        );
         return Ok(());
     };
 
-    eprintln!("Matched schedule entry: {} {}", entry.days.join(","), entry.time);
+    eprintln!(
+        "Matched schedule entry: {} {}",
+        entry.days.join(","),
+        entry.time
+    );
 
     let mut state = load_state();
     let mut changed = false;
@@ -150,7 +168,9 @@ pub async fn update(config: &Config) -> Result<()> {
         let rgb_data = image::load_and_prepare(std::path::Path::new(path))?;
         device::push_image(&dev.ip, &rgb_data).await?;
 
-        state.last_pushed.insert(device_name.to_string(), path.clone());
+        state
+            .last_pushed
+            .insert(device_name.to_string(), path.clone());
         changed = true;
         eprintln!("{}: done", device_name);
     }
@@ -160,4 +180,45 @@ pub async fn update(config: &Config) -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn entry(days: &[&str], time: &str) -> ScheduleEntry {
+        ScheduleEntry {
+            days: days.iter().map(|d| d.to_string()).collect(),
+            time: time.to_string(),
+            stage_left: None,
+            stage_right: None,
+        }
+    }
+
+    #[test]
+    fn parse_time_validates_ranges() {
+        assert_eq!(parse_time("09:30"), Some(570));
+        assert_eq!(parse_time("23:59"), Some(1439));
+        assert_eq!(parse_time("24:00"), None);
+        assert_eq!(parse_time("12:60"), None);
+        assert_eq!(parse_time("nope"), None);
+    }
+
+    #[test]
+    fn finds_latest_matching_entry_for_day() {
+        let schedule = vec![
+            entry(&["Mon", "Tue"], "08:00"),
+            entry(&["Mon"], "09:00"),
+            entry(&["Mon"], "12:00"),
+        ];
+
+        let selected = find_active_entry(&schedule, "Mon", 10 * 60).unwrap();
+        assert_eq!(selected.time, "09:00");
+    }
+
+    #[test]
+    fn ignores_entries_after_current_time() {
+        let schedule = vec![entry(&["Tue"], "14:00")];
+        assert!(find_active_entry(&schedule, "Tue", 13 * 60 + 59).is_none());
+    }
 }

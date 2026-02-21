@@ -12,7 +12,7 @@ fn url(ip: &str) -> String {
 async fn post_command(ip: &str, payload: Value) -> Result<Value> {
     let client = reqwest::Client::new();
     let resp = client
-        .post(&url(ip))
+        .post(url(ip))
         .json(&payload)
         .send()
         .await
